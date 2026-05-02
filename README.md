@@ -42,8 +42,8 @@ Os dados são carregados a partir de:
 
 ## Desenvolvimento
 
-Baseado em `maximo_B_26` com melhorias substanciais de UX e funcionalidades.
+Baseado de UX e funcionalidades.
 
 ## Contato
 
-Email: operacao@empresa.com.br
+Email: vitor.braga@ht-hidrotermica.com.br
