@@ -1,0 +1,14 @@
+# Arquivos temporários
+*.tmp
+*.bak
+*~
+
+# Logs
+*.log
+
+# Dados sensíveis (se houver)
+/data/private/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
