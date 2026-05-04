@@ -183,9 +183,9 @@ body {
   box-shadow: 0 4px 12px rgba(96, 165, 250, 0.15);
 }
 
-.btn-refresh:active { transform: translateY(0); }
-
+.btn-refresh.loading { pointer-events: none; opacity: 0.7; }
 .btn-refresh.loading .ico { animation: spin .8s linear infinite; }
+.btn-refresh.done { border-color: rgba(34, 197, 94, .4); color: #22c55e; }
 
 .btn-refresh .ico { width: 16px; height: 16px; flex-shrink: 0; }
 
@@ -220,29 +220,22 @@ body {
 }
 
 /* ===== Tabs ===== */
-.tabs-container {
+.tabs-wrap {
   max-width: 1400px;
   margin: 0 auto;
   padding: 24px 24px 0;
 }
 
-.tabs-scroll {
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  padding-bottom: 4px;
-}
-
-.tabs-scroll::-webkit-scrollbar { display: none; }
-
 .tabs {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
   background: var(--surface-1);
   border: 1px solid var(--line);
   padding: 6px;
   border-radius: 18px;
   width: fit-content;
+  max-width: 100%;
 }
 
 .tab {
@@ -263,7 +256,6 @@ body {
   align-items: center;
   gap: 2px;
   line-height: 1;
-  white-space: nowrap;
 }
 
 .tab .tab-sub {
@@ -283,6 +275,14 @@ body {
 }
 
 .tab.active .tab-sub { color: var(--op); }
+
+.tab.tab-anual.active {
+  background: linear-gradient(180deg, rgba(245, 158, 11, .2), rgba(34, 211, 238, .1));
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, .3) inset, 0 4px 12px rgba(245, 158, 11, .1);
+}
+
+.tab.tab-new { animation: tabPulse 2s ease-in-out 3; }
+@keyframes tabPulse { 0%, 100% { box-shadow: none; } 50% { box-shadow: 0 0 0 2px rgba(34, 197, 94, .5), 0 0 20px rgba(34, 197, 94, .15); } }
 
 /* ===== Main Content ===== */
 .main {
@@ -313,8 +313,6 @@ body {
   color: var(--text-mute);
   margin-top: 4px;
 }
-
-.pill-group { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .pill {
   display: inline-flex;
@@ -415,153 +413,137 @@ body {
   font-size: 18px;
   letter-spacing: -.01em;
   margin: 0 0 6px;
-  display: flex;
-  align-items: center;
 }
 
 .card .card-sub { font-size: 13px; color: var(--text-mute); margin-bottom: 20px; }
 
-/* Grid Layouts */
-.grid-2 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px; }
+/* Chart */
+.chart-legend { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 16px; }
+.legend-item { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-mute); }
+.legend-item .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.legend-item .swatch.op { background: var(--op); }
+.legend-item .swatch.manut { background: var(--maint); }
 
-/* Charts & Gauges */
-.chart-container { position: relative; height: 320px; margin-top: 20px; }
+.chart-scroll { overflow-x: auto; padding-bottom: 12px; -webkit-overflow-scrolling: touch; }
+.bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 300px; padding: 14px 4px 30px; position: relative; }
+.bar-grid { position: absolute; left: 36px; right: 0; top: 14px; bottom: 30px; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
+.bar-grid .gline { height: 1px; background: var(--line); position: relative; }
+.bar-grid .gline::before { content: attr(data-v); position: absolute; left: -36px; top: -7px; font-size: 10px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
 
-.gauge-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px 0;
-}
+.bar-col { flex: 1; min-width: 24px; max-width: 60px; display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; height: 100%; }
+.bar-stack { flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; }
+.bar-pair { display: flex; gap: 3px; width: 100%; flex: 1; align-items: flex-end; }
+.bar { flex: 1; border-radius: 6px 6px 2px 2px; position: relative; cursor: pointer; transition: all .2s ease; min-height: 0; animation: barRise .6s cubic-bezier(.2, .8, .2, 1) both; }
+.bar:hover { filter: brightness(1.2); transform: scaleX(1.05); }
+.bar.bar-op { background: linear-gradient(180deg, var(--op), var(--op-2)); box-shadow: 0 0 12px rgba(96, 165, 250, .2); }
+.bar.bar-manut { background: linear-gradient(180deg, var(--m-prev), var(--m-modi)); box-shadow: 0 0 12px rgba(245, 158, 11, .2); }
+@keyframes barRise { from { opacity: 0; transform: scaleY(.2); transform-origin: bottom; } to { opacity: 1; transform: scaleY(1); } }
+.bar-label { font-size: 10px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+
+/* Tooltips */
+.tooltip { position: fixed; z-index: 1000; background: rgba(17, 22, 29, .96); backdrop-filter: blur(12px); border: 1px solid var(--line-strong); border-radius: 16px; padding: 16px; min-width: 260px; box-shadow: var(--shadow-2); color: var(--text); font-size: 12px; pointer-events: none; opacity: 0; transform: translateY(8px); transition: all .15s ease; }
+.tooltip.show { opacity: 1; transform: translateY(0); }
+.tt-head { display: flex; justify-content: space-between; align-items: baseline; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.tt-head .dia { color: var(--text-mute); font-size: 12px; font-weight: 500; }
+.tt-section { margin-top: 10px; }
+.tt-section-title { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.tt-section-title .dot { width: 8px; height: 8px; border-radius: 2px; }
+.tt-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 12px; }
+.tt-row .lhs { display: flex; align-items: center; gap: 10px; }
+.tt-row .swatch { width: 10px; height: 10px; border-radius: 3px; }
+.tt-row .name { color: var(--text-mute); }
+.tt-row .val { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--text); }
+.tt-total { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; }
+
+/* OS Rich Tip */
+.os-rich-tip { position: fixed; z-index: 1100; background: rgba(17, 22, 29, .98); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, .12); border-radius: 16px; padding: 16px; min-width: 300px; max-width: 500px; box-shadow: 0 20px 50px rgba(0,0,0,.6); font-size: 12px; pointer-events: none; opacity: 0; transform: translateY(10px); transition: all .2s ease; color: #e7ecf3; }
+.os-rich-tip.show { opacity: 1; transform: translateY(0); }
+.os-rich-tip-head { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, .1); display: flex; align-items: center; gap: 10px; }
+.os-rich-tip-row { display: grid; grid-template-columns: 85px 1fr auto; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255, 255, 255, .05); align-items: center; }
+.os-rich-tip-row:last-child { border-bottom: none; }
+.os-num { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px; color: #60a5fa; }
+.os-desc { font-size: 11px; color: #9aa6b6; line-height: 1.4; }
+.os-loc { font-size: 10px; color: #6a7689; }
+.os-st { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+.st-concluida { background: rgba(34, 197, 94, .15); color: #22c55e; }
+.st-andamento { background: rgba(96, 165, 250, .15); color: #60a5fa; }
+.st-aprovada { background: rgba(168, 85, 247, .15); color: #a855f7; }
+.st-aguardando { background: rgba(239, 68, 68, .15); color: #ef4444; }
+.st-programada { background: rgba(245, 158, 11, .15); color: #f59e0b; }
+.os-rich-tip-foot { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .08); font-size: 10px; color: #6a7689; display: flex; justify-content: space-between; }
 
 /* OS List & Breakdown */
 .os-list { display: flex; flex-direction: column; gap: 10px; }
-
-.os-item {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 12px 16px;
-  border-radius: 14px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  transition: all .2s ease;
-  cursor: pointer;
-}
-
-.os-item:hover {
-  border-color: var(--line-strong);
-  background: var(--surface-3);
-  transform: translateX(4px);
-}
-
+.os-item { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); transition: all .2s ease; }
+.os-item:hover { border-color: var(--line-strong); transform: translateX(4px); }
 .os-item .dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
-
-.os-item .label { flex: 1; font-weight: 600; font-size: 14px; display: flex; flex-direction: column; }
-
+.os-item .label { flex: 1; font-weight: 600; font-size: 14px; display: flex; flex-direction: column; gap: 1px; }
 .os-item .label .full { font-size: 11px; color: var(--text-dim); text-transform: uppercase; }
-
 .os-item .count { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 20px; }
+.os-summary { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 16px; margin-bottom: 16px; }
+.os-summary .label { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-mute); font-weight: 700; }
+.os-summary .val { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 32px; letter-spacing: -.02em; }
+
+.breakdown { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 16px; }
+.bd-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; }
+.bd-row .swatch { width: 8px; height: 28px; border-radius: 3px; flex-shrink: 0; }
+.bd-row .info { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.bd-row .name { font-size: 13px; font-weight: 700; color: var(--text); }
+.bd-row .full { font-size: 11px; color: var(--text-dim); }
+.bd-row .v { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px; }
+
+/* Date Filter */
+.date-filter { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; font-size: 13px; align-items: center; }
+.date-filter label { display: flex; align-items: center; gap: 6px; color: var(--text-mute); font-weight: 600; }
+.date-filter input[type="date"] { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); padding: 6px 10px; border-radius: 10px; font-size: 13px; outline: none; }
+.date-filter input[type="date"]:focus { border-color: var(--op); }
+.date-filter button { appearance: none; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text); font-size: 13px; font-weight: 700; padding: 7px 16px; border-radius: 999px; cursor: pointer; transition: all .2s ease; }
+.date-filter button:hover { background: var(--surface-3); border-color: var(--op); color: var(--op); }
+
+/* Gauge */
+.gauge-svg-wrap { display: flex; flex-direction: column; align-items: center; padding: 20px 0; }
+.gauge-legend { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; margin-top: 20px; font-size: 13px; color: var(--text-mute); }
+.gauge-legend-item { display: flex; align-items: center; gap: 8px; }
+.gauge-legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+
+/* Copy Button */
+.copy-btn { appearance: none; border: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 6px 8px; border-radius: 8px; background: var(--surface-3); color: var(--text-mute); font-size: 14px; transition: all .2s ease; }
+.copy-btn:hover { background: var(--surface-4); color: var(--op); transform: scale(1.1); }
+
+/* Toast */
+.toast { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(100px); z-index: 2000; background: var(--surface-3); border: 1px solid var(--line-strong); border-radius: 16px; padding: 14px 24px; font-size: 14px; font-weight: 700; box-shadow: var(--shadow-2); opacity: 0; transition: all .4s cubic-bezier(.175, .885, .32, 1.275); pointer-events: none; white-space: nowrap; display: flex; align-items: center; gap: 10px; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.error { border-color: rgba(239, 68, 68, .4); color: #fca5a5; }
+.toast.success { border-color: rgba(34, 197, 94, .4); color: #86efac; }
 
 /* Footer */
-.footer {
-  max-width: 1400px;
-  margin: 40px auto 0;
-  padding: 32px 24px 60px;
-  border-top: 1px solid var(--line);
-  font-size: 13px;
-  color: var(--text-dim);
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 24px;
-}
-
+.footer { max-width: 1400px; margin: 40px auto 0; padding: 32px 24px 60px; border-top: 1px solid var(--line); font-size: 13px; color: var(--text-dim); display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 24px; }
 .footer a { color: var(--op); text-decoration: none; }
 .footer a:hover { text-decoration: underline; }
+.footer code { font-family: 'JetBrains Mono', monospace; background: var(--surface-2); padding: 2px 8px; border-radius: 6px; color: var(--text-mute); }
 
-.footer code {
-  font-family: 'JetBrains Mono', monospace;
-  background: var(--surface-2);
-  padding: 2px 8px;
-  border-radius: 6px;
-  color: var(--text-mute);
-}
+/* Grid Layout */
+.grid-2 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px; margin-top: 24px; }
 
-/* Tooltips & Toasts */
-.toast {
-  position: fixed;
-  bottom: 32px;
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  z-index: 1000;
-  background: var(--surface-3);
-  border: 1px solid var(--line-strong);
-  border-radius: 16px;
-  padding: 14px 24px;
-  font-size: 14px;
-  font-weight: 600;
-  box-shadow: var(--shadow-2);
-  opacity: 0;
-  transition: all .4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-.toast.success { border-color: rgba(34, 197, 94, .4); color: #86efac; }
-.toast.error { border-color: rgba(239, 68, 68, .4); color: #fca5a5; }
-
-/* Responsive Adjustments */
-@media (max-width: 1024px) {
-  .grid-2 { grid-template-columns: 1fr; }
-}
-
+@media (max-width: 1024px) { .grid-2 { grid-template-columns: 1fr; } }
 @media (max-width: 768px) {
   .appbar-inner { padding: 12px 16px; gap: 12px; }
   .brand-text .t { font-size: 17px; }
   .brand-text .s { font-size: 10px; }
-  .header-logos { display: none; } /* Hide logos on small mobile to save space */
-  .appbar-actions .txt { display: none; } /* Hide "Atualizar" text */
+  .header-logos { display: none; }
+  .appbar-actions .txt { display: none; }
   .btn-refresh { padding: 8px; }
-  
-  .tabs-container, .main, .footer { padding-left: 16px; padding-right: 16px; }
+  .tabs-wrap, .main, .footer { padding-left: 16px; padding-right: 16px; }
   .section-head h2 { font-size: 24px; }
   .kpis { grid-template-columns: 1fr 1fr; }
+  .breakdown { grid-template-columns: 1fr; }
 }
+@media (max-width: 480px) { .kpis { grid-template-columns: 1fr; } }
 
-@media (max-width: 480px) {
-  .kpis { grid-template-columns: 1fr; }
-  .section-head { flex-direction: column; align-items: flex-start; gap: 12px; }
-  .pill-group { width: 100%; }
-}
-
-/* Custom Scrollbar */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: var(--surface-0); }
-::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 10px; border: 2px solid var(--surface-0); }
-::-webkit-scrollbar-thumb:hover { background: var(--surface-4); }
+.empty { text-align: center; padding: 60px 20px; color: var(--text-dim); font-size: 14px; font-weight: 500; }
 
 /* Help Icon */
-.help-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--surface-3);
-  color: var(--text-mute);
-  font-size: 10px;
-  font-weight: 800;
-  margin-left: 8px;
-  cursor: help;
-  transition: all .2s;
-}
-.help-icon:hover { background: var(--surface-4); color: var(--text); }
+.help-icon { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: var(--surface-3); color: var(--text-mute); font-size: 10px; font-weight: 800; margin-left: 8px; cursor: help; vertical-align: middle; }
 
 </style>
 </head>
@@ -569,49 +551,40 @@ body {
 
 <header class="appbar">
   <div class="appbar-inner">
-    <a href="#" class="brand">
+    <div class="brand">
       <div class="brand-mark"></div>
       <div class="brand-text">
         <div class="t">Painel Operacional</div>
-        <div class="s">Operação · Manutenção · OS</div>
+        <div class="s">Operação · Manutenção · Ordens de Serviço</div>
       </div>
-    </a>
-    
-    <div class="header-logos">
-      <a href="http://10.56.22.57:9080/maximo/ui/login?welcome=true" target="_blank" class="logo-link" title="Maximo – Operação"><img src="logo_OPE.png" alt="OPE" class="logo-img"></a>
-      <a href="http://10.56.22.57:9080/maximo/ui/login?welcome=true" target="_blank" class="logo-link" title="Maximo – Manutenção"><img src="logo_MNT.png" alt="MNT" class="logo-img"></a>
-      <a href="https://www.appsheet.com/start/8b5e3af0-da8c-475e-bf2f-3464aec1c5d5?platform=desktop#appName=Report_OS_31-982081519&vss=H4sIAAAAAAAAA62POw7CMBBErxJN7RO4RRQIAUUQDaYw8UayCHZkO4HI8nk4CBfD4SMKOqDcN5qn2Yhe06kMsjqAb-P7mtMAjiiwHloS4AITa4KzjQATWMrjA66cIuMLRUVJrtfXixVISDv2MgXy4PFbEf_XIgadcdC1JjdaR0e2PQ05HvsZfLaRGI5dkPuG7u_kdkqZ1bbqPKlNnvfTLD8z03MrjVpYleW1bDylG9_IZX-XAQAA&view=Ordens%20de%20Servi%C3%A7o" target="_blank" class="logo-link report" title="Relatório de OS"><img src="logo_report.png" alt="Report" class="logo-img"></a>
     </div>
-
+    <div class="header-logos">
+      <a href="http://10.56.22.57:9080/maximo/ui/login?welcome=true" target="_blank" class="logo-link" title="Acessar Maximo – Operação"><img src="logo_OPE.png" alt="Operação" class="logo-img"></a>
+      <a href="http://10.56.22.57:9080/maximo/ui/login?welcome=true" target="_blank" class="logo-link" title="Acessar Maximo – Manutenção"><img src="logo_MNT.png" alt="Manutenção" class="logo-img"></a>
+      <a href="https://www.appsheet.com/start/8b5e3af0-da8c-475e-bf2f-3464aec1c5d5?platform=desktop#appName=Report_OS_31-982081519&vss=H4sIAAAAAAAAA62POw7CMBBErxJN7RO4RRQIAUUQDaYw8UayCHZkO4HI8nk4CBfD4SMKOqDcN5qn2Yhe06kMsjqAb-P7mtMAjiiwHloS4AITa4KzjQATWMrjA66cIuMLRUVJrtfXixVISDv2MgXy4PFbEf_XIgadcdC1JjdaR0e2PQ05HvsZfLaRGI5dkPuG7u_kdkqZ1bbqPKlNnvfTLD8z03MrjVpYleW1bDylG9_IZX-XAQAA&view=Ordens%20de%20Servi%C3%A7o" target="_blank" class="logo-link report" title="Acessar relatório de Ordens de Serviço"><img src="logo_report.png" alt="Relatório" class="logo-img"></a>
+    </div>
     <div class="appbar-spacer"></div>
-
     <div class="appbar-actions">
-      <button class="btn-refresh" id="btnRefresh">
+      <button class="btn-refresh" id="btnRefresh" title="Buscar novos meses no repositório">
         <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
         <span class="txt">Atualizar</span>
       </button>
-      <div class="op-filter">
-        <select id="operFilter">
-          <option value="_ALL">Todos os operadores</option>
-        </select>
+      <div class="op-filter" title="Filtrar por operador">
+        <select id="operFilter"><option value="_ALL">Todos os operadores</option></select>
       </div>
     </div>
   </div>
 </header>
 
-<div class="tabs-container">
-  <div class="tabs-scroll">
-    <div class="tabs" id="tabs"></div>
-  </div>
-</div>
+<div class="tabs-wrap"><div class="tabs" id="tabs"></div></div>
 
 <main class="main" id="main"></main>
 
 <footer class="footer">
   <div>
-    <strong>Painel Operacional Dinâmico</strong><br/>
-    Turma B · Manutenção & Operação<br/>
-    <a href="mailto:operacao.manutencao@empresa.com.br">operacao.manutencao@empresa.com.br</a>
+    <strong>Dashboard Dinâmico · Turma B</strong><br/>
+    Manutenção & Operação<br/>
+    Contato: <a href="mailto:operacao.manutencao@empresa.com.br">operacao.manutencao@empresa.com.br</a>
   </div>
   <div style="text-align: right;">
     Dados: <code id="footStats">—</code><br/>
@@ -625,236 +598,529 @@ body {
 <div class="toast" id="toast"></div>
 
 <script id="data-blob" type="application/json">
-{
-  "operadores": ["FRANCISCO.SANTOS", "GENESIO.NASCIMENTO", "HELIO.BEZERRA", "VITOR.BRAGA"],
-  "meses": ["2026-01", "2026-02", "2026-03", "2026-04"],
-  "tipos_oper": ["OPER"],
-  "tipos_manut": ["CORR", "EM", "PRED", "PREV", "SERV", "MODI"],
-  "dados": {
-    "2026-04": {
-      "_ALL": {
-        "horas_oper": 145.5, "horas_manut": 112.0, "horas_total": 257.5, "total_os": 42, "dias_trabalhados": 22,
-        "tipos": {"OPER": 145.5, "CORR": 24.0, "EM": 12.0, "PRED": 8.0, "PREV": 45.0, "SERV": 15.0, "MODI": 8.0},
-        "por_dia": []
-      }
-    }
-  },
-  "os_details": {}
-}
+{"operadores":["FRANCISCO.SANTOS","GENESIO.NASCIMENTO","HELIO.BEZERRA","VITOR.BRAGA"],"meses":["2026-01","2026-02","2026-03","2026-04"],"tipos_oper":["OPER"],"tipos_manut":["CORR","EM","PRED","PREV","SERV","MODI"],"dados":{"2026-04":{"_ALL":{"horas_oper":145.5,"horas_manut":112.0,"horas_total":257.5,"total_os":42,"dias_trabalhados":22,"tipos":{"OPER":145.5,"CORR":24.0,"EM":12.0,"PRED":8.0,"PREV":45.0,"SERV":15.0,"MODI":8.0},"por_dia":[],"os_por_tipo":{"OPER":15,"CORR":8,"EM":4,"PRED":2,"PREV":10,"SERV":2,"MODI":1},"os_lists":{}}}},"os_details":{}}
 </script>
 
 <script>
-// --- CORE LOGIC ---
-const $ = s => document.querySelector(s);
-const DATA = JSON.parse($('#data-blob').textContent);
-const state = {
-  mes: DATA.meses[DATA.meses.length - 1],
+(function(){
+"use strict";
+
+// ===================== CONFIG & CONSTANTS =====================
+const TIPOS_MANUT=["CORR","EM","PRED","PREV","SERV","MODI"];
+const ALL_TIPOS=["OPER",...TIPOS_MANUT];
+const MANUT_LABELS={
+  "CORR":{nome:"Corretiva",cor:"var(--m-corr)"},
+  "EM":{nome:"Emergencial",cor:"var(--m-em)"},
+  "PRED":{nome:"Preditiva",cor:"var(--m-pred)"},
+  "PREV":{nome:"Preventiva",cor:"var(--m-prev)"},
+  "SERV":{nome:"Serviços",cor:"var(--m-serv)"},
+  "MODI":{nome:"Modificativa",cor:"var(--m-modi)"}
+};
+const OPER_LABEL={nome:"Operacional",cor:"var(--op)"};
+const MES_NOMES={"01":"Janeiro","02":"Fevereiro","03":"Março","04":"Abril","05":"Maio","06":"Junho","07":"Julho","08":"Agosto","09":"Setembro","10":"Outubro","11":"Novembro","12":"Dezembro"};
+
+// ===================== STATE =====================
+let DATA=JSON.parse(document.getElementById("data-blob").textContent);
+const state={
+  mes: DATA.meses[DATA.meses.length-1],
   operador: "_ALL",
   startDate: null,
   endDate: null
 };
 
-const OPER_LABEL = { nome: "Operação", cor: "var(--op)" };
-const MANUT_LABELS = {
-  "CORR": { nome: "Corretiva", cor: "var(--m-corr)" },
-  "EM":   { nome: "Emergencial", cor: "var(--m-em)" },
-  "PRED": { nome: "Preditiva", cor: "var(--m-pred)" },
-  "PREV": { nome: "Preventiva", cor: "var(--m-prev)" },
-  "SERV": { nome: "Serviço", cor: "var(--m-serv)" },
-  "MODI": { nome: "Modificação", cor: "var(--m-modi)" }
-};
+const DASHBOARD_TITLE = (DATA.titulo || 'Painel Operacional – Turma B');
+const DASHBOARD_SUBTITLE = (DATA.subtitulo || 'Operação · Manutenção · Ordens de Serviço');
+const brandTitleEl = document.querySelector('.brand-text .t');
+const brandSubEl = document.querySelector('.brand-text .s');
+if (brandTitleEl) brandTitleEl.textContent = DASHBOARD_TITLE;
+if (brandSubEl) brandSubEl.textContent = DASHBOARD_SUBTITLE;
 
-function fmtNum(n) { return n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 1 }); }
+// ===================== HELPERS =====================
+function fmtH(v){if(!v)return"0h";const h=Math.floor(v),m=Math.round((v-h)*60);return m===0?h+"h":h+"h "+String(m).padStart(2,"0")+"m"}
+function fmtNum(v,d){return Number(v||0).toFixed(d||0).replace(".",",")}
+function formatMesLabel(ym){if(ym==="ANUAL")return{top:"Anual",sub:"Consolidado"};const[a,m]=ym.split("-");return{top:MES_NOMES[m]||m,sub:a}}
+function $(id){return document.getElementById(id)}
 
-function formatMesLabel(ym) {
-  const [y, m] = ym.split("-");
-  const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-  return { top: meses[parseInt(m)-1], sub: y };
+// ===================== TOAST =====================
+let toastTimer;
+function showToast(msg,type){
+  const t=$("toast");t.textContent=msg;t.className="toast "+type+" show";
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),4000);
 }
 
-function showToast(msg, type='success') {
-  const t = $('#toast');
-  t.textContent = msg;
-  t.className = `toast show ${type}`;
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
+// ===================== REFRESH =====================
+async function refreshData(){
+  const btn=$("btnRefresh");
+  btn.classList.add("loading");
+  btn.querySelector(".txt").textContent="Buscando…";
+  try{
+    const base=window.location.href.replace(/\/[^/]*$/,"/");
+    const manifestURL=base+"data/index.json?_="+Date.now();
+    const res=await fetch(manifestURL);
+    if(!res.ok) throw new Error("Manifesto não encontrado ("+res.status+")");
+    const manifest=await res.json();
 
-// --- RENDERERS ---
-function renderTabs() {
-  const container = $('#tabs');
-  container.innerHTML = DATA.meses.map(m => {
-    const lbl = formatMesLabel(m);
-    const active = m === state.mes ? 'active' : '';
-    return `<button class="tab ${active}" onclick="state.mes='${m}';render()">
-      <span class="tab-sub">${lbl.sub}</span>
-      <span>${lbl.top}</span>
-    </button>`;
-  }).join('');
-}
+    const currentMeses=new Set(DATA.meses);
+    const allRemote=manifest.meses||[];
+    const newMeses=allRemote.filter(m=>!currentMeses.has(m));
 
-function renderFilters() {
-  const sel = $('#operFilter');
-  const current = state.operador;
-  sel.innerHTML = '<option value="_ALL">Todos os operadores</option>' + 
-    DATA.operadores.map(o => `<option value="${o}" ${o === current ? 'selected' : ''}>${o.replace(/\./g, ' ')}</option>`).join('');
-  
-  sel.onchange = (e) => {
-    state.operador = e.target.value;
+    let updated=false;
+    for(const ym of allRemote){
+      try{
+        const mRes=await fetch(base+"data/"+ym+".json?_="+Date.now());
+        if(!mRes.ok) continue;
+        const mData=await mRes.json();
+        DATA.dados[ym]=mData.dados;
+        updated=true;
+      }catch(e){console.warn("Erro ao baixar "+ym+".json",e)}
+    }
+
+    if(manifest.anual) DATA.dados["ANUAL"]=manifest.anual;
+    DATA.meses=allRemote;
+    if(manifest.operadores&&manifest.operadores.length) DATA.operadores=manifest.operadores;
+
+    buildFilter();
+    buildTabs(newMeses);
+    if(!DATA.dados[state.mes]){state.mes=DATA.meses[DATA.meses.length-1]}
     render();
-  };
+
+    if(newMeses.length>0){
+      showToast("✓ "+newMeses.length+" novo(s) mês(es) encontrado(s)","success");
+      btn.classList.add("done");
+    }else if(updated){
+      showToast("✓ Dados atualizados com sucesso","success");
+      btn.classList.add("done");
+    }else{
+      showToast("Nenhum mês novo encontrado","");
+    }
+  }catch(e){
+    console.error("Refresh error:",e);
+    showToast("Sem dados remotos — usando dados embutidos","error");
+  }finally{
+    btn.classList.remove("loading");
+    btn.querySelector(".txt").textContent="Atualizar";
+    setTimeout(()=>btn.classList.remove("done"),5000);
+  }
 }
 
-function renderKPIs(b) {
-  return `
-    <div class="kpis">
-      <div class="kpi kpi-op">
-        <div class="badge">⚡</div>
-        <div class="label">Horas Operação</div>
-        <div class="value">${fmtNum(b.horas_oper)}<span class="unit">h</span></div>
-        <div class="meta">Atividades operacionais</div>
-      </div>
-      <div class="kpi kpi-manut">
-        <div class="badge">🛠️</div>
-        <div class="label">Horas Manutenção</div>
-        <div class="value">${fmtNum(b.horas_manut)}<span class="unit">h</span></div>
-        <div class="meta">Preventivas e Corretivas</div>
-      </div>
-      <div class="kpi">
-        <div class="badge">📋</div>
-        <div class="label">Total de OS</div>
-        <div class="value">${b.total_os || 0}</div>
-        <div class="meta">Ordens processadas</div>
-      </div>
-      <div class="kpi">
-        <div class="badge">📅</div>
-        <div class="label">Dias Ativos</div>
-        <div class="value">${b.dias_trabalhados || 0}</div>
-        <div class="meta">Dias com lançamentos</div>
-      </div>
-    </div>
-  `;
+$("btnRefresh").addEventListener("click",refreshData);
+
+// ===================== TABS =====================
+function buildTabs(highlightNew){
+  const root=$("tabs");root.innerHTML="";
+  const items=[...DATA.meses,"ANUAL"];
+  const newSet=new Set(highlightNew||[]);
+  items.forEach(ym=>{
+    const lbl=formatMesLabel(ym);
+    const b=document.createElement("button");
+    let cls="tab";
+    if(ym==="ANUAL") cls+=" tab-anual";
+    if(ym===state.mes) cls+=" active";
+    if(newSet.has(ym)) cls+=" tab-new";
+    b.className=cls;b.dataset.ym=ym;
+    b.innerHTML='<span class="tab-sub">'+lbl.sub+'</span><span>'+lbl.top+'</span>';
+    b.addEventListener("click",()=>{state.mes=ym;document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.ym===ym));render()});
+    root.appendChild(b);
+  });
 }
 
-function renderHHPanel(b) {
+// ===================== OPERATOR FILTER =====================
+function buildFilter(){
+  const sel=$("operFilter");
+  const current=sel.value||"_ALL";
+  sel.innerHTML='<option value="_ALL">Todos os operadores</option>';
+  (DATA.operadores||[]).forEach(op=>{
+    const o=document.createElement("option");o.value=op;o.textContent=op.replace(/\./g," ");
+    sel.appendChild(o);
+  });
+  sel.value=current;
+  sel.onchange=function(e){state.operador=e.target.value;render()};
+}
+
+// ===================== RENDER KPIs =====================
+function renderKPIs(b){
+  const dias=b.dias_trabalhados,ht=dias*8,hu=dias*7;
+  return '<div class="kpis">'
+    +'<div class="kpi kpi-op"><div class="badge">⚙</div><div class="label">Horas operacionais</div><div class="value">'+fmtNum(b.horas_oper)+'<span class="unit">h</span></div><div class="meta">'+fmtH(b.horas_oper)+' totais em OPER</div></div>'
+    +'<div class="kpi kpi-manut"><div class="badge">🛠</div><div class="label">Horas em manutenção</div><div class="value">'+fmtNum(b.horas_manut)+'<span class="unit">h</span></div><div class="meta">'+fmtH(b.horas_manut)+' · 6 tipos combinados</div></div>'
+    +'<div class="kpi"><div class="badge">📅</div><div class="label">Dias trabalhados</div><div class="value">'+dias+'<span class="unit">dias</span></div><div class="meta">com lançamento de horas</div></div>'
+    +'<div class="kpi"><div class="badge">⏱</div><div class="label">Horas totais (×8h)</div><div class="value">'+ht+'<span class="unit">h</span></div><div class="meta">'+dias+' dias × 8h · meta teórica</div></div>'
+    +'<div class="kpi"><div class="badge">🕖</div><div class="label">Horas úteis (×7h)</div><div class="value">'+hu+'<span class="unit">h</span></div><div class="meta">'+dias+' dias × 7h previstas</div></div>'
+    +'<div class="kpi"><div class="badge">📋</div><div class="label">Ordens de serviço</div><div class="value">'+b.total_os+'<span class="unit">OS</span></div><div class="meta">distintas no período</div></div>'
+    +'</div>';
+}
+
+// ===================== HH PANEL =====================
+function renderHHPanel(b){
   const dias = b.dias_trabalhados || 0;
   const hhProg = dias * 7;
-  const hhApt = b.horas_manut || 0;
-  const pct = hhProg > 0 ? Math.round((hhApt / hhProg) * 100) : 0;
-  const cor = pct >= 100 ? '#22c55e' : (pct >= 80 ? '#f59e0b' : '#ef4444');
-  
-  return `
-    <div class="card">
-      <h3>Aderência Homem-Hora <span class="help-icon" title="Meta baseada em 7h de manutenção por dia trabalhado.">?</span></h3>
-      <div class="card-sub">Manutenção apontada vs. meta planejada</div>
-      
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin: 20px 0;">
-        <div style="background: var(--surface-2); padding: 16px; border-radius: 16px; text-align: center; border: 1px solid var(--line);">
-          <div style="font-size: 11px; color: var(--text-mute); text-transform: uppercase; margin-bottom: 4px;">Programado</div>
-          <div style="font-family: Outfit; font-size: 24px; font-weight: 700;">${hhProg}h</div>
-        </div>
-        <div style="background: var(--surface-2); padding: 16px; border-radius: 16px; text-align: center; border: 1px solid var(--line);">
-          <div style="font-size: 11px; color: var(--text-mute); text-transform: uppercase; margin-bottom: 4px;">Apontado</div>
-          <div style="font-family: Outfit; font-size: 24px; font-weight: 700; color: var(--maint);">${fmtNum(hhApt)}h</div>
-        </div>
-        <div style="background: var(--surface-2); padding: 16px; border-radius: 16px; text-align: center; border: 1px solid var(--line);">
-          <div style="font-size: 11px; color: var(--text-mute); text-transform: uppercase; margin-bottom: 4px;">Aderência</div>
-          <div style="font-family: Outfit; font-size: 24px; font-weight: 700; color: ${cor};">${pct}%</div>
-        </div>
-      </div>
+  const hhApt  = b.horas_manut || 0;
+  const hhOper = b.horas_oper  || 0;
+  const pct    = hhProg > 0 ? Math.round((hhApt / hhProg) * 100) : 0;
+  const cor    = pct >= 100 ? '#22c55e' : (pct >= 80 ? '#f59e0b' : '#ef4444');
+  const label  = pct >= 100 ? 'Meta atingida ✓' : (pct >= 80 ? 'Abaixo do previsto' : 'Crítico — abaixo de 80%');
+  const barW   = Math.min(pct, 100);
+  const tipos  = b.tipos || {};
+  const tiposInfo = [
+    {k:'CORR',nome:'Corretiva',   cor:'var(--m-corr)'},
+    {k:'EM',  nome:'Emergencial', cor:'var(--m-em)'},
+    {k:'PRED',nome:'Preditiva',   cor:'var(--m-pred)'},
+    {k:'PREV',nome:'Preventiva',  cor:'var(--m-prev)'},
+    {k:'SERV',nome:'Serviços',    cor:'var(--m-serv)'},
+    {k:'MODI',nome:'Modificativa',cor:'var(--m-modi)'},
+  ];
+  const subtipos = tiposInfo
+    .filter(t => (tipos[t.k]||0) > 0)
+    .map(t => {
+      const v = tipos[t.k]||0;
+      const p = hhApt > 0 ? Math.round((v/hhApt)*100) : 0;
+      return '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px">'
+        +'<span style="width:6px;height:24px;border-radius:2px;background:'+t.cor+';flex-shrink:0"></span>'
+        +'<span style="flex:1;font-size:12px;color:var(--text-mute)">'+t.k+' · '+t.nome+'</span>'
+        +'<span style="font-family:JetBrains Mono,monospace;font-size:13px;font-weight:700">'+v.toFixed(0)+'h</span>'
+        +'<span style="font-size:11px;color:var(--text-dim);min-width:36px;text-align:right">'+p+'%</span>'
+      +'</div>';
+    }).join('');
 
-      <div style="background: var(--surface-3); height: 12px; border-radius: 10px; overflow: hidden; margin-bottom: 8px;">
-        <div style="width: ${Math.min(pct, 100)}%; height: 100%; background: ${cor}; border-radius: 10px; transition: width 1s ease;"></div>
-      </div>
-      <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim);">
-        <span>0h</span>
-        <span>Meta: ${hhProg}h</span>
-      </div>
-    </div>
-  `;
+  const ttExplain = 'title="HH Programado = dias com lançamento × 7h planejadas de manutenção. HH Apontado = soma das horas de manutenção registradas (excluindo OPER). Aderência = Apontado ÷ Programado × 100%."';
+
+  return '<div class="card">'
+    +'<div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">'
+      +'<div>'
+        +'<h3 style="margin:0">Homem-Hora Apontado × Programado'
+          +'<span class="help-icon" '+ttExplain+'>?</span>'
+        +'</h3>'
+        +'<div class="card-sub" style="margin-bottom:0">Manutenção apontada vs. meta planejada</div>'
+      +'</div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:20px 0">'
+      +'<div style="background:var(--surface-2);border:1px solid var(--line);border-radius:16px;padding:16px;text-align:center">'
+        +'<div style="font-size:10px;color:var(--text-mute);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">HH Programado</div>'
+        +'<div style="font-family:Outfit,sans-serif;font-size:26px;font-weight:700;color:var(--op)">'+hhProg+'<span style="font-size:13px;color:var(--text-mute);font-weight:400">h</span></div>'
+        +'<div style="font-size:11px;color:var(--text-dim);margin-top:4px">'+dias+' dias × 7h</div>'
+      +'</div>'
+      +'<div style="background:var(--surface-2);border:1px solid var(--line);border-radius:16px;padding:16px;text-align:center">'
+        +'<div style="font-size:10px;color:var(--text-mute);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">HH Apontado (MNT)</div>'
+        +'<div style="font-family:Outfit,sans-serif;font-size:26px;font-weight:700;color:var(--maint)">'+hhApt.toFixed(0)+'<span style="font-size:13px;color:var(--text-mute);font-weight:400">h</span></div>'
+        +'<div style="font-size:11px;color:var(--text-dim);margin-top:4px">só manutenção</div>'
+      +'</div>'
+      +'<div style="background:var(--surface-2);border:1px solid var(--line);border-radius:16px;padding:16px;text-align:center">'
+        +'<div style="font-size:10px;color:var(--text-mute);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Aderência HH</div>'
+        +'<div style="font-family:Outfit,sans-serif;font-size:26px;font-weight:700;color:'+cor+'">'+pct+'<span style="font-size:13px;font-weight:400">%</span></div>'
+        +'<div style="font-size:11px;margin-top:4px;color:'+cor+'">'+label+'</div>'
+      +'</div>'
+    +'</div>'
+    +'<div style="background:var(--surface-3);border-radius:999px;height:12px;overflow:hidden;margin-bottom:8px">'
+      +'<div style="height:100%;width:'+barW+'%;background:'+cor+';border-radius:999px;transition:width .6s ease"></div>'
+    +'</div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:20px">'
+      +'<span>0h</span>'
+      +'<span>Meta: '+hhProg+'h</span>'
+      +'<span style="color:'+cor+'">Apontado: '+hhApt.toFixed(0)+'h</span>'
+    +'</div>'
+    +'<div style="font-size:11px;color:var(--text-mute);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Detalhamento por tipo</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px">'
+      +subtipos
+    +'</div>'
+    +'<div style="margin-top:16px;padding:10px 14px;background:var(--surface-2);border-radius:10px;font-size:11px;color:var(--text-dim)">'
+      +'ℹ️ OPER não entra no HH Apontado · Horas operacionais: <strong style="color:var(--op)">'+hhOper.toFixed(0)+'h</strong>'
+    +'</div>'
+    +'</div>';
 }
 
-function renderOSBreakdown(b) {
-  const items = Object.entries(b.tipos).filter(([t]) => t !== 'OPER').map(([t, v]) => {
-    const label = MANUT_LABELS[t] || { nome: t, cor: "var(--text-dim)" };
-    return `
-      <div class="os-item">
-        <div class="dot" style="background: ${label.cor}"></div>
-        <div class="label">
-          <span>${label.nome}</span>
-          <span class="full">${t}</span>
-        </div>
-        <div class="count">${fmtNum(v)}h</div>
-      </div>
-    `;
-  }).join('');
+// ===================== CHART FILTERED =====================
+function renderChartFiltered(b, ym){
+  let dias = b.por_dia;
+  if(!dias || !dias.length) return '<div class="empty">Sem lançamentos</div>';
+  let df = dias.map(d => {
+    let dateStr;
+    if(ym !== 'ANUAL'){
+      dateStr = ym + '-' + String(d.dia).padStart(2,'0');
+    } else {
+      if(String(d.dia).includes('-')){
+        const parts = String(d.dia).split('-');
+        const year = (DATA.meses && DATA.meses.length) ? DATA.meses[0].split('-')[0] : String(new Date().getFullYear());
+        dateStr = year + '-' + String(parts[0]).padStart(2,'0') + '-' + String(parts[1]).padStart(2,'0');
+      } else {
+        const year = (DATA.meses && DATA.meses.length) ? DATA.meses[0].split('-')[0] : String(new Date().getFullYear());
+        const month = ym.split('-')[1] || '01';
+        dateStr = year + '-' + String(month).padStart(2,'0') + '-' + String(d.dia).padStart(2,'0');
+      }
+    }
+    return Object.assign({}, d, {fullDate: dateStr});
+  });
+  if(state.startDate) df = df.filter(x => x.fullDate >= state.startDate);
+  if(state.endDate) df = df.filter(x => x.fullDate <= state.endDate);
+  if(!df.length) return '<div class="empty">Sem lançamentos no período selecionado</div>';
 
-  return `
-    <div class="card">
-      <h3>Distribuição por Tipo</h3>
-      <div class="card-sub">Detalhamento das horas de manutenção</div>
-      <div class="os-list">${items || '<div class="empty">Sem registros</div>'}</div>
-    </div>
-  `;
-}
-
-function render() {
-  const b = DATA.dados[state.mes] && DATA.dados[state.mes][state.operador];
-  renderTabs();
-  renderFilters();
-  
-  if (!b) {
-    $('#main').innerHTML = '<div class="empty">Sem dados para esta seleção</div>';
-    return;
+  let grouped = df;
+  if(df.length > 31){
+    const segSize = Math.ceil(df.length / 31);
+    grouped = [];
+    for(let i=0; i < df.length; i += segSize){
+      const slice = df.slice(i, i + segSize);
+      const first = slice[0];
+      const last  = slice[slice.length - 1];
+      const g = { dia: first.dia + '-' + last.dia };
+      ALL_TIPOS.forEach(k => g[k] = slice.reduce((sum,itm) => sum + (itm[k] || 0), 0));
+      g.oper_total  = slice.reduce((sum,itm) => sum + (itm.oper_total  || 0), 0);
+      g.manut_total = slice.reduce((sum,itm) => sum + (itm.manut_total || 0), 0);
+      grouped.push(g);
+    }
   }
 
-  const lbl = formatMesLabel(state.mes);
-  const opTitle = state.operador === "_ALL" ? "Todos os Operadores" : state.operador.replace(/\./g, " ");
-
-  $('#main').innerHTML = `
-    <div class="section-head">
-      <div>
-        <h2>${lbl.top} <span style="color:var(--text-dim); font-weight:500;">· ${lbl.sub}</span></h2>
-        <div class="sub">${opTitle} · ${b.total_os || 0} OS Processadas</div>
-      </div>
-      <div class="pill-group">
-        <span class="pill"><span class="dot" style="background:var(--op)"></span>${fmtNum(b.horas_oper)}h Operação</span>
-        <span class="pill"><span class="dot" style="background:var(--maint)"></span>${fmtNum(b.horas_manut)}h Manutenção</span>
-      </div>
-    </div>
-    
-    ${renderKPIs(b)}
-    
-    <div class="grid-2">
-      <div class="left-col">
-        ${renderHHPanel(b)}
-        <div class="card">
-          <h3>Atividade Diária</h3>
-          <div class="card-sub">Lançamentos ao longo do mês</div>
-          <div class="empty" style="padding: 40px 0;">Gráfico de barras disponível na versão completa</div>
-        </div>
-      </div>
-      <div class="right-col">
-        ${renderOSBreakdown(b)}
-      </div>
-    </div>
-  `;
-
-  $('#footStats').textContent = `${DATA.operadores.length} Operadores · ${DATA.meses.length} Meses`;
-  $('#lastSync').textContent = `Sincronizado em ${new Date().toLocaleString('pt-BR')}`;
+  let max = 0;
+  grouped.forEach(d => {
+    const t = (d.oper_total || 0) + (d.manut_total || 0);
+    if(t > max) max = t;
+  });
+  if(max === 0) max = 8;
+  const topo = Math.ceil(max / 4) * 4 || 4;
+  const gv = [topo, topo * 0.75, topo * 0.5, topo * 0.25, 0];
+  const gh = gv.map(v => '<div class="gline" data-v="'+fmtNum(v)+'h"></div>').join('');
+  const cols = grouped.map((d,i) => {
+    const opPct = (d.oper_total / topo) * 100;
+    const mPct  = (d.manut_total / topo) * 100;
+    const dd    = JSON.stringify(d).replace(/"/g,'&quot;');
+    const lbl   = ym === 'ANUAL' ? d.dia : String(d.dia).replace(/^0/,'');
+    return '<div class="bar-col"><div class="bar-stack"><div class="bar-pair">'
+      + '<div class="bar bar-op" style="height:'+opPct+'%;animation-delay:'+i*15+'ms" data-day="'+dd+'" data-kind="op"></div>'
+      + '<div class="bar bar-manut" style="height:'+mPct+'%;animation-delay:'+(i*15+8)+'ms" data-day="'+dd+'" data-kind="manut"></div>'
+      + '</div></div><div class="bar-label">'+lbl+'</div></div>';
+  }).join('');
+  const minW = Math.max(grouped.length * 36, 600);
+  return '<div class="chart-legend"><span class="legend-item"><span class="swatch op"></span> Operação</span><span class="legend-item"><span class="swatch manut"></span> Manutenção</span></div>'
+    + '<div class="chart-scroll"><div class="bar-chart" style="min-width:'+minW+'px;padding-left:42px"><div class="bar-grid">'+gh+'</div>'+cols+'</div></div>';
 }
 
-// --- INITIALIZATION ---
-window.onload = () => {
-  render();
-  $('#btnRefresh').onclick = () => {
-    $('#btnRefresh').classList.add('loading');
-    setTimeout(() => {
-      $('#btnRefresh').classList.remove('loading');
-      showToast('Dados atualizados com sucesso!');
-    }, 1500);
-  };
-};
+// ===================== OS LIST =====================
+function renderOS(b){
+  function formatOSCopy(lista){ return lista && lista.length ? lista.map((n,i)=>i===0?String(n):',='+String(n)).join('') : ''; }
+  const tipos=[
+    {k:"OPER",...OPER_LABEL},
+    {k:"CORR",...MANUT_LABELS.CORR},{k:"EM",...MANUT_LABELS.EM},
+    {k:"PRED",...MANUT_LABELS.PRED},{k:"PREV",...MANUT_LABELS.PREV},
+    {k:"SERV",...MANUT_LABELS.SERV},{k:"MODI",...MANUT_LABELS.MODI}
+  ];
+  const rows=tipos.map(t=>{
+    const c=b.os_por_tipo[t.k]||0;
+    if(!c) return "";
+    const lista=(b.os_lists&&b.os_lists[t.k]&&Array.isArray(b.os_lists[t.k]))?b.os_lists[t.k]:[];
+    const copyVal=lista.length?formatOSCopy(lista):t.k+':'+c+'OS';
+    return '<div class="os-item" data-type="'+t.k+'">'
+      +'<span class="dot" style="background:'+t.cor+'"></span>'
+      +'<div class="label"><span>'+t.k+'</span><span class="full">'+t.nome+'</span></div>'
+      +'<span class="count">'+c+'</span>'
+      +'<button class="copy-btn" data-copy="'+copyVal.replace(/"/g,"&quot;")+'" title="Copiar OS de '+t.nome+'">📋</button>'
+      +'</div>';
+  }).join("")||'<div class="empty">Nenhuma OS</div>';
+  
+  const allOS = [];
+  Object.values(b.os_lists || {}).forEach(l => allOS.push(...l));
+  const uniqueOS = [...new Set(allOS)];
+  const allCopy = formatOSCopy(uniqueOS);
 
+  return '<div class="os-summary"><span class="label">Total de OS</span><span class="val">'+b.total_os+'</span>'
+    +'<button class="copy-btn" style="margin-left:auto" data-copy="'+allCopy.replace(/"/g,"&quot;")+'" title="Copiar todas as OS">📋 Todas</button>'
+    +'</div><div class="os-list">'+rows+'</div>';
+}
+
+// ===================== BREAKDOWN =====================
+function renderBreakdown(b){
+  function formatOSCopy(lista){ return lista && lista.length ? lista.map((n,i)=>i===0?String(n):',='+String(n)).join('') : ''; }
+  return '<div class="breakdown">' + TIPOS_MANUT.map(k => {
+    const v = b.tipos[k] || 0;
+    if(!v) return '';
+    const m = MANUT_LABELS[k];
+    const lista = (b.os_lists && b.os_lists[k]) ? b.os_lists[k] : [];
+    const copyVal = lista.length ? formatOSCopy(lista) : k+':'+fmtNum(v)+'h';
+    const nOS = (b.os_por_tipo && b.os_por_tipo[k]) ? b.os_por_tipo[k] : 0;
+    return '<div class="bd-row">'
+      +'<span class="swatch" style="background:'+m.cor+'"></span>'
+      +'<div class="info"><span class="name">'+k+'</span><span class="full">'+m.nome+(nOS?' · '+nOS+' OS':'')+'</span></div>'
+      +'<span class="v">'+fmtNum(v)+'h</span>'
+      +'<button class="copy-btn" data-copy="'+copyVal.replace(/"/g,"&quot;")+'" title="Copiar '+k+'">📋</button>'
+      +'</div>';
+  }).filter(Boolean).join('') + '</div>';
+}
+
+// ===================== GAUGE =====================
+function renderGaugeCard(b){
+  return '<div class="card">'
+    +'<h3>Resumo de horas no mês <span class="help-icon" title="Velocímetro de horas lançadas vs carga teórica (8h × dias).">?</span></h3>'
+    +'<div class="card-sub">Horas lançadas vs carga teórica</div>'
+    +'<div class="gauge-svg-wrap">'
+      +'<svg id="gaugeSVG" viewBox="0 0 260 150" width="100%" style="max-width:340px">'
+        +'<defs><linearGradient id="gOper" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#3b82f6"/></linearGradient>'
+        +'<linearGradient id="gMaint" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs>'
+        +'<path id="gTrack" fill="none" stroke="#1c2530" stroke-width="26" stroke-linecap="round"/>'
+        +'<path id="gOp" fill="none" stroke="url(#gOper)" stroke-width="26" stroke-linecap="butt"/>'
+        +'<path id="gMn" fill="none" stroke="url(#gMaint)" stroke-width="26" stroke-linecap="butt"/>'
+        +'<line id="gMark" stroke="#9aa6b6" stroke-width="2" stroke-dasharray="5,3" opacity="0.6"/>'
+        +'<line id="gNeedle" stroke="#e7ecf3" stroke-width="2.5" stroke-linecap="round"/>'
+        +'<circle id="gPin" r="6" fill="#e7ecf3"/>'
+        +'<text id="gPct" x="130" y="112" text-anchor="middle" font-family="Outfit,sans-serif" font-size="22" font-weight="700" fill="#e7ecf3">--%</text>'
+        +'<text id="gTotal" x="130" y="130" text-anchor="middle" font-family="Inter Tight,sans-serif" font-size="11" fill="#6a7689">0h / 0h</text>'
+        +'<text x="16" y="148" font-family="JetBrains Mono,monospace" font-size="9" fill="#6a7689">0h</text>'
+        +'<text id="gMax" x="244" y="148" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="9" fill="#6a7689">0h</text>'
+      +'</svg>'
+      +'<div class="gauge-legend">'
+        +'<span class="gauge-legend-item"><span class="gauge-legend-dot" style="background:#60a5fa"></span><span id="gLegOp">OPER</span></span>'
+        +'<span class="gauge-legend-item"><span class="gauge-legend-dot" style="background:#a855f7"></span><span id="gLegMn">MANUT</span></span>'
+      +'</div>'
+    +'</div></div>';
+}
+
+function drawGauge(b){
+  function polarToXY(cx,cy,r,deg){ const rad=(deg-180)*Math.PI/180; return{x:cx+r*Math.cos(rad),y:cy+r*Math.sin(rad)}; }
+  function arcPath(cx,cy,r,startDeg,endDeg){
+    if(Math.abs(endDeg-startDeg)<0.01) return "";
+    const s=polarToXY(cx,cy,r,startDeg), e=polarToXY(cx,cy,r,endDeg);
+    const large=(endDeg-startDeg)>180?1:0;
+    return `M${s.x.toFixed(2)},${s.y.toFixed(2)} A${r},${r} 0 ${large},1 ${e.x.toFixed(2)},${e.y.toFixed(2)}`;
+  }
+  const cx=130,cy=140,r=108, dias=b.dias_trabalhados||0, max=dias*8||1, oper=b.horas_oper||0, manut=b.horas_manut||0, total=oper+manut, pct=Math.round((total/max)*100), uteis=dias*7;
+  const dOper=Math.min(179.9,(oper/max)*180), dManut=Math.min(179.9,((oper+manut)/max)*180), dMark=Math.min(179.9,(uteis/max)*180), dNeedl=Math.min(179.9,(total/max)*180);
+  
+  const track=$('gTrack'), gOp=$('gOp'), gMn=$('gMn'), gMark=$('gMark'), needle=$('gNeedle'), pin=$('gPin');
+  if(track) track.setAttribute('d',arcPath(cx,cy,r,0,180));
+  if(gOp) gOp.setAttribute('d',dOper>0.1?arcPath(cx,cy,r,0,dOper):'');
+  if(gMn) gMn.setAttribute('d',dManut>dOper+0.1?arcPath(cx,cy,r,dOper,dManut):'');
+  if(gMark){ const mIn=polarToXY(cx,cy,r-20,dMark), mOut=polarToXY(cx,cy,r+10,dMark); gMark.setAttribute('x1',mIn.x.toFixed(1));gMark.setAttribute('y1',mIn.y.toFixed(1));gMark.setAttribute('x2',mOut.x.toFixed(1));gMark.setAttribute('y2',mOut.y.toFixed(1)); }
+  if(needle){ const nTip=polarToXY(cx,cy,r+14,dNeedl), nBase=polarToXY(cx,cy,12,dNeedl); needle.setAttribute('x1',nBase.x.toFixed(1));needle.setAttribute('y1',nBase.y.toFixed(1));needle.setAttribute('x2',nTip.x.toFixed(1));needle.setAttribute('y2',nTip.y.toFixed(1)); }
+  if(pin){pin.setAttribute('cx',cx);pin.setAttribute('cy',cy);}
+  
+  const corPct=pct>=100?'#22c55e':(pct>=80?'#f59e0b':'#ef4444');
+  if($('gPct')){ $('gPct').textContent=pct+'%'; $('gPct').setAttribute('fill',corPct); }
+  if($('gTotal')) $('gTotal').textContent=fmtNum(total,1)+'h / '+fmtNum(max,0)+'h';
+  if($('gMax')) $('gMax').textContent=fmtNum(max,0)+'h';
+  if($('gLegOp')) $('gLegOp').textContent='OPER — '+fmtNum(oper,1)+'h';
+  if($('gLegMn')) $('gLegMn').textContent='MANUT — '+fmtNum(manut,1)+'h';
+}
+
+// ===================== TOOLTIP =====================
+const tip=$("tooltip");
+function bindTooltips(){document.querySelectorAll(".bar-chart .bar").forEach(bar=>{bar.addEventListener("mouseenter",onEnter);bar.addEventListener("mousemove",onMove);bar.addEventListener("mouseleave",onLeave);bar.addEventListener("touchstart",onEnter,{passive:true})})}
+function onEnter(e){const el=e.currentTarget;const day=JSON.parse(el.dataset.day.replace(/&quot;/g,'"'));tip.innerHTML=buildTT(day);tip.classList.add("show");placeT(e)}
+function onMove(e){placeT(e)}
+function onLeave(){tip.classList.remove("show")}
+function placeT(e){const tw=tip.offsetWidth,th=tip.offsetHeight;let cx=e.clientX||0,cy=e.clientY||0;let x=cx+14,y=cy-th-12;if(x+tw>window.innerWidth-14)x=cx-tw-14;if(y<14)y=cy+16;tip.style.left=x+"px";tip.style.top=y+"px"}
+function buildTT(day){
+  let diaTxt;
+  if(String(day.dia).includes('-')){
+    const pts=String(day.dia).split('-');
+    diaTxt=(pts[1]||pts[0]).padStart(2,'0')+'/'+(pts[0]).padStart(2,'0');
+  } else {
+    const [ano,mes]=state.mes.split('-');
+    diaTxt=(String(day.dia).padStart(2,'0'))+'/'+(mes||'??')+'/'+(ano||'??');
+  }
+  const opH=day.OPER||0;
+  const md=TIPOS_MANUT.map(t=>{const v=day[t]||0;if(v<=0)return"";const m=MANUT_LABELS[t];return'<div class="tt-row"><div class="lhs"><span class="swatch" style="background:'+m.cor+'"></span><span class="name">'+t+' · '+m.nome+'</span></div><span class="val">'+fmtH(v)+'</span></div>'}).join("");
+  const total=(day.oper_total||0)+(day.manut_total||0);
+  let h='<div class="tt-head"><span>Detalhes</span><span class="dia">'+diaTxt+'</span></div>';
+  if(opH>0) h+='<div class="tt-section"><div class="tt-section-title"><span class="dot" style="background:var(--op)"></span>Operação</div><div class="tt-row"><div class="lhs"><span class="swatch" style="background:var(--op)"></span><span class="name">OPER · Operacional</span></div><span class="val">'+fmtH(opH)+'</span></div></div>';
+  if(md) h+='<div class="tt-section"><div class="tt-section-title"><span class="dot" style="background:var(--maint)"></span>Manutenção</div>'+md+'</div>';
+  h+='<div class="tt-total"><span>Total no dia</span><span class="val">'+fmtH(total)+'</span></div>';
+  if(state.operador === "_ALL" && (DATA.operadores && DATA.operadores.length)){
+    const avg = total / DATA.operadores.length;
+    h+='<div class="tt-total"><span>Média por operador</span><span class="val">'+fmtH(avg)+'</span></div>';
+  }
+  return h;
+}
+
+// ===================== OS RICH TIP =====================
+const osRichTip = $("osRichTip");
+function statusClass(st){
+  if(!st) return '';
+  const s = st.toLowerCase();
+  if(s.includes('conclu')) return 'st-concluida';
+  if(s.includes('andamento')) return 'st-andamento';
+  if(s.includes('aprovad')) return 'st-aprovada';
+  if(s.includes('aguard')) return 'st-aguardando';
+  if(s.includes('program')) return 'st-programada';
+  return '';
+}
+function buildRichTip(lista, tipo, cor){
+  if(!lista||!lista.length) return null;
+  const det = DATA.os_details || {};
+  let rows = lista.slice(0,12).map(osn => {
+    const d = det[String(osn)] || {};
+    const desc = d.desc || d.descricao || '—';
+    const loc  = d.local || d.site || '—';
+    const st   = d.status || d.situacao || '—';
+    const sc   = statusClass(st);
+    return '<div class="os-rich-tip-row"><span class="os-num">'+osn+'</span><div><div class="os-desc">'+desc+'</div><div class="os-loc">'+loc+'</div></div><span class="os-st '+sc+'">'+st+'</span></div>';
+  }).join('');
+  const extra = lista.length > 12 ? lista.length - 12 : 0;
+  return '<div class="os-rich-tip-head"><span style="width:8px;height:8px;border-radius:2px;background:'+cor+';display:inline-block"></span><span>'+tipo+'</span><span style="margin-left:auto;font-size:10px;color:var(--text-dim)">'+lista.length+' OS</span></div>'
+    + rows + (extra?'<div style="font-size:10px;color:var(--text-dim);padding:4px 0">... e mais '+extra+' OS</div>':'')
+    +'<div class="os-rich-tip-foot"><span>Clique em 📋 para copiar</span><span style="color:var(--text-mute)">'+lista.length+' registros</span></div>';
+}
+function placeRichTip(e){
+  if(!osRichTip) return;
+  const tw=osRichTip.offsetWidth,th=osRichTip.offsetHeight;
+  let x=e.clientX+16,y=e.clientY-th/2;
+  if(x+tw>window.innerWidth-16) x=e.clientX-tw-16;
+  if(y<8) y=8;
+  if(y+th>window.innerHeight-8) y=window.innerHeight-th-8;
+  osRichTip.style.left=x+'px';
+  osRichTip.style.top=y+'px';
+}
+
+// ===================== MAIN RENDER =====================
+function render(){
+  const b=DATA.dados[state.mes]&&DATA.dados[state.mes][state.operador];
+  if(!b){$("main").innerHTML='<div class="empty">Sem dados para esta seleção</div>';return}
+  const lbl=formatMesLabel(state.mes);
+  const opTitle=state.operador==="_ALL"?"Todos os operadores":state.operador.replace(/\./g," ");
+  
+  $("main").innerHTML=
+    '<div class="section-head"><div><h2>'+lbl.top+' <span style="color:var(--text-dim);font-weight:500">· '+lbl.sub+'</span></h2><div class="sub">'+opTitle+' · '+b.total_os+' OS · '+fmtNum(b.horas_total,1)+'h registradas</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><span class="pill"><span class="dot" style="background:var(--op)"></span>'+fmtNum(b.horas_oper,1)+'h operação</span><span class="pill"><span class="dot" style="background:var(--maint)"></span>'+fmtNum(b.horas_manut,1)+'h manutenção</span></div></div>'
+    +renderKPIs(b)
+    +renderGaugeCard(b)
+    +renderHHPanel(b)
+    +'<div class="grid-2"><div class="card"><h3>Horas por dia <span class="help-icon" title="Barras azuis = OPER, roxas = Manutenção.">?</span></h3>'
+    +'<div class="date-filter"><label>De: <input type="date" id="startDate"></label><label>Até: <input type="date" id="endDate"></label><button id="applyDateFilter">Aplicar</button><button id="clearDateFilter" style="margin-left:6px">Limpar</button></div>'
+    +'<div class="card-sub">Operação vs. Manutenção · passe o mouse para detalhes</div>'
+    +renderChartFiltered(b,state.mes)
+    +'</div>'
+    +'<div class="card"><h3>Ordens de Serviço por tipo <span class="help-icon" title="Quantidade de OS distintas no período.">?</span></h3><div class="card-sub">Quantidade de OS distintas no período</div>'+renderOS(b)+'</div></div>'
+    +'<div class="card" style="margin-top:16px"><h3>Detalhamento · Manutenção <span class="help-icon" title="Horas totais por categoria.">?</span></h3><div class="card-sub">Horas totais em cada tipo de manutenção</div>'+renderBreakdown(b)+'</div>';
+  
+  bindTooltips();
+  bindDateFilter();
+  drawGauge(b);
+  bindCopyButtons();
+  
+  $("footStats").textContent=DATA.meses.length+" meses · "+(DATA.operadores||[]).length+" operadores";
+  const ls=$('lastSync'); if(ls) ls.textContent='Sincronizado em '+ new Date().toLocaleString('pt-BR');
+  const dl=$('dataLink'); if(dl) dl.href='https://drive.google.com/drive/folders/1ckqvL24ShJQxY8ZK1Aiw3BDkiKPrrXNE';
+}
+
+function bindDateFilter(){
+  const s=$('startDate'), e=$('endDate'), btn=$('applyDateFilter'), clr=$('clearDateFilter');
+  if(!s||!e||!btn) return;
+  if(state.startDate) s.value=state.startDate; if(state.endDate) e.value=state.endDate;
+  btn.onclick=()=>{ state.startDate=s.value||null; state.endDate=e.value||null; render(); };
+  if(clr) clr.onclick=()=>{ state.startDate=null; state.endDate=null; s.value=''; e.value=''; render(); };
+}
+
+function bindCopyButtons(){
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.onclick=async()=>{
+      const val=btn.getAttribute('data-copy')||'';
+      try{ await navigator.clipboard.writeText(val); showToast('Copiado com sucesso','success'); }
+      catch(e){ showToast('Erro ao copiar','error'); }
+    };
+  });
+}
+
+// ===================== INIT =====================
+buildFilter();buildTabs();render();
+window.addEventListener("scroll",()=>tip.classList.remove("show"),{passive:true});
+window.addEventListener("resize",()=>tip.classList.remove("show"));
+
+})();
 </script>
 </body>
 </html>
